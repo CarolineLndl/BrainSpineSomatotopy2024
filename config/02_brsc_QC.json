@@ -1,0 +1,41 @@
+{"main_dir":"/cerebro/cerebro1/dataset/stratals/",
+"raw_dir":"/rawdata/",
+"IDs_info_f":"participants_brsc_fc.tsv",
+"structures":["brain","spinalcord"],
+"PAM50_cord":"PAM50_cord.nii.gz",
+"PAM50_t2":"PAM50_t2.nii.gz",
+"PAM50_csf":"PAM50_csf.nii.gz",
+ 
+"design_exp":{"ses_nb":1,
+              "ses_names":[""],
+              "ses_names_0exemple":[""],
+              "task_nb":1,
+             "task_names":[""],
+             "run_names_0exemple":[""]},
+              
+"moco_files":{"dir":"/derivatives/preprocessing/sub-{}/func/3_MOCO/{}/",
+                "FD_mean_f":"FD_mean.txt"},
+    
+"preprocess_dir":{"main_dir":"/derivatives/preprocessing/",
+                  "func_stc":"/1_STC/",
+                  "func_mask":"/2_Coarse_mask/",
+                  "func_moco":"/3_MOCO/",
+                  "func_seg":"/4_Segmentation/",
+                  "func_brain_seg":"/4_Segmentation/brain/",
+                  "func_coreg":"/5_Coregistration/",
+                  "anat_sc_seg":"/T1w_seg/",
+                  "anat_sc_coreg":"/T1w_sc_coreg/",
+                  "anat_brain_seg":"/brain/segmentation/",
+                  "anat_brain_coreg":"/brain/coregistration/"
+                  },
+ 
+
+ 
+
+ "tools_dir":{"main_codes":"/cerebro/cerebro1/dataset/bmpd/derivatives/HealthyControls_project/2024_brsc_fc_project/",
+            "spm_dir":"/cerebro/cerebro1/dataset/bmpd/derivatives/thibault_test/code/toolbox/spm12/"},
+ 
+"participants_IDs":["A006"],
+ "files_specificities":{"anat":{},
+ "func":{"A027":"run-02","A029":"run-02","P099":"run-02"}}
+} 
