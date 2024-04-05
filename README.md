@@ -1,6 +1,11 @@
-# BrainSpineSomatotopy2024: code and data organization
+# BrainSpineSomatotopy2024:  
+## Code and data organization  
 Codes for simultaneous brain and spine RS analyses
+### 
 
-# Data organization:
+## Data:
+### Acquisition
+### Rawdata
+### Derivatives
 
 
