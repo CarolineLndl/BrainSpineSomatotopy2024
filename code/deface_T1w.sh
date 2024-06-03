@@ -4,7 +4,7 @@ code_path=2024_brsc_fc_project/code/
 rawdata_path=2024_brsc_fc_data/rawdata/
 preproc_path=2024_brsc_fc_data/derivatives/preprocessing/
 
-IDs=(A006 A007 A008 A009 A011 A013 A023 A024 A025 A026 A027 A028 A029 A030 A032 A033 A034 A036 A037 A028 A039 A043 A044 A045 A046 A048 A050 A051 A052 P030 P099)
+IDs=(A006 A007 A008 A009 A011 A013 A023 A024 A025 A026 A027 A028 A029 A030 A032 A033 A034 A036 A037 A038 A039 A043 A044 A045 A046 A048 A050 A051 A052 P030 P099)
 # 1 Check if the raw files exists
 echo "This dataset is composent of ${#IDs[@]} participants"
 for ID in "${IDs[@]}"; do
@@ -38,7 +38,9 @@ fi
 done
 
 # 2 Deface anat
-#we followd the recomandation of https://spine-generic.readthedocs.io/data-acquisition.html
-
-
-sg_deface_using_r -i /Users/carolinelandelle/Documents/Ongoing_tests/defacing/ -o /Users/carolinelandelle/Documents/Ongoing_tests/defacing/
+# the participant A029 was defaced manually because mideface didn't work
+for ID in "${IDs[@]}"; do
+mideface --i $rawdata_path/sub-$ID"/anat/sub-"$ID"_T1w.nii.gz" --o $rawdata_path/sub-$ID"/anat/sub-"$ID"_T1w_defaced.nii.gz"
+#rm $rawdata_path/sub-$ID"/anat/sub-"$ID"_T1w.nii.gz"
+#mv $rawdata_path/sub-$ID"/anat/sub-"$ID"_T1w_defaced.nii.gz" $rawdata_path/sub-$ID"/anat/sub-"$ID"_T1w.nii.gz"
+done
