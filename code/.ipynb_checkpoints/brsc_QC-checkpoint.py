@@ -3,11 +3,11 @@ import glob, os
 import matplotlib.pyplot as plt 
 import pandas as pd
 import numpy as np
-
 from nilearn.image import math_img,smooth_img
 from nilearn.input_data import NiftiMasker
+from brsc_preprocess import Preprocess_Sc, Preprocess_Br
 
-def tSNR(config=None,ID=None,i_img=None,mask=None,structure='brain',o_tag="_moco",redo=False):
+def tSNR(config=None,ID=None,i_img=None,mask=None,structure='brain',o_tag="_moco",inTemplate=False,redo=False):
     '''
         This function calculate the tSNR withi the brain or spinal cord
         
@@ -16,6 +16,7 @@ def tSNR(config=None,ID=None,i_img=None,mask=None,structure='brain',o_tag="_moco
         config: load config file
         ID: participant ID
         i_img: 4d func image
+        inTemplate: put True to coregister the tSNR map into template space
         redo: put True to re-run the analysis on existing file (default=False)
     
     '''
@@ -25,12 +26,12 @@ def tSNR(config=None,ID=None,i_img=None,mask=None,structure='brain',o_tag="_moco
     if mask==None:
         mask=glob.glob(config["main_dir"]+ config["seg_files"]["dir"].format(ID,structure) +"/*")[0]
 
-    o_img= config["tSNR"]["dir"] + "sub-"+ ID +"/" + os.path.basename(i_img).split(".")[0] + "_tSNR.nii"
-    # compute tSNR
-    if not os.path.exists(o_img) or redo==True:
+    native_tSNR= config["tSNR"]["dir"] + "sub-"+ ID +"/" + os.path.basename(i_img).split(".")[0] + "_tSNR.nii"
+    # compute tSNR *******************************************************************************
+    if not os.path.exists(native_tSNR) or redo==True:
         tsnr_func= math_img('img.mean(axis=3) / img.std(axis=3)', img=i_img)
         tsnr_func_smooth = smooth_img(tsnr_func, fwhm=[3,3,6])
-        tsnr_func_smooth.to_filename(o_img)
+        tsnr_func_smooth.to_filename(native_tSNR)
 
     # extract value inside the mask
     o_txt=config["tSNR"]["dir"] + "sub-"+ ID +"/sub-" + ID + "_" + structure +o_tag +"_tSNR_mean.txt"
@@ -38,14 +39,82 @@ def tSNR(config=None,ID=None,i_img=None,mask=None,structure='brain',o_tag="_moco
         print("redo")
         print(o_txt)
         masker_stc = NiftiMasker(mask_img=mask,smoothing_fwhm=None,standardize=False,detrend=False) # select the mask
-        tSNR_masked=masker_stc.fit_transform(o_img) # mask the image
+        tSNR_masked=masker_stc.fit_transform(native_tSNR) # mask the image
         mean_tSNR_masked=np.mean(tSNR_masked) # calculate the mean value
         with open(o_txt, 'w') as f:
             f.write(str(mean_tSNR_masked))  # save in a file
-            
-    return o_txt
 
         
+    # Coregistratin into MNi or PAM50 space **************************************************
+    if inTemplate == True:
+        #>>>>>>>>>>>> Spinal cord
+        if structure=="spinalcord":
+            preprocess_Sc=Preprocess_Sc(config)
+            outreg_f=native_tSNR.split('.')[0] +"_inTemplate.nii.gz" #tSNR in template space
+            if not os.path.exists(outreg_f):
+                warp_img= glob.glob(config["main_dir"] + config["warp_files"]["dir_sc"].format(ID,structure) + config["warp_files"]["warp_func2PAM50"])[0] # warping field
+                preprocess_Sc.apply_warp(ID=ID,
+                                         i_img=native_tSNR +".gz",
+                                         o_folder=os.path.dirname(native_tSNR)+ "/",
+                                         dest_img=config["tools_dir"]["main_codes"] + "/template/"+config["PAM50_t2"],
+                                         warping_field=warp_img,
+                                         ses_name='',task_name='',tag='_inTemplate',
+                                         threshold=None,redo=True,verbose=True) # apply transformation
+            
+        #>>>>>>>>>>>> Brain, in 2 steps
+        if structure=="brain":
+            preprocess_Br=Preprocess_Br(config)
+           
+            # >> Coreg into anat space
+            coreg2anat_f=native_tSNR.split('.')[0] +"_inAnat.nii"
+            if not os.path.exists(coreg2anat_f) or redo==True:
+                # coregistration to anat space
+                anat_f= glob.glob(config["main_dir"] + config["brain_anat"]["file"].format(ID))[0] 
+                preprocess_Br.coreg_func2anat(ID=ID,ref_img=anat_f,
+                                              source_img=native_tSNR,
+                                              other_files=None,
+                                              tag="_inAnat",
+                                              o_folder=os.path.dirname(native_tSNR))
+                  
+            # >> Coregitration into MNI space
+            if not os.path.exists(coreg2anat_f.split('.')[0] +"_inTemplate.nii.gz"):
+                warp_f=glob.glob(config["main_dir"] + config["warp_files"]["dir_brain"].format(ID,structure) + config["warp_files"]["warp_anat2MNI"])[0]
+                
+                outreg_f=coreg2anat_f.split('.')[0] + "_inTemplate.nii" # default output
+                preprocess_Br.normalisation(ID=None,
+                                            warp_file=warp_f,
+                                            coreg2anat_file=coreg2anat_f,
+                                            o_file=outreg_f,
+                                            brain_mask=None,
+                                            redo=False)
+            outreg_f=coreg2anat_f.split('.')[0] + "_inTemplate.nii.gz" #tSNR in template space
+            
+    return o_txt, native_tSNR, outreg_f if inTemplate == True else None
+
+def tSNR_group(config=None,i_img=None,structure='brain',o_tag="_moco",redo=False):
+    
+    if i_img==None:
+        raise Warning("Provide a list of filenames !")
+
+    # Create 4D image
+    o_4d_img=config["tSNR"]["dir"].split("tSNR/")[0] + "/group/" + "4d_n" + str(len(config['participants_IDs'])) +  "_"+structure+"_tSNR.nii.gz" # output filename
+    all_files=(' ').join(i_img) # join strings
+    
+    if not os.path.exists(o_4d_img) or redo==True:
+        string="fslmerge -t " + o_4d_img + " " + all_files
+        os.system(string)
+
+    # Calculate mean image
+    o_mean_img=config["tSNR"]["dir"].split("tSNR/")[0] + "/group/" + "mean_n" + str(len(config['participants_IDs'])) +  "_"+structure+"_tSNR.nii.gz" # output filename
+    if not os.path.exists(o_mean_img) or redo==True:
+        string="fslmaths " + o_4d_img + " -Tmean " + o_mean_img
+        os.system(string)
+
+    return o_mean_img
+
+             
+            
+          
     
     
 def plot_metrics(config,df=None,y=None,index='ID',columns=['structure'],y_title="y_axis",save_plot=False):

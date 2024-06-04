@@ -7,7 +7,7 @@ import nibabel as nib
 
 import matlab.engine
 
-import BrSc_utils
+import brsc_utils
 
 #plotting:
 import matplotlib
@@ -102,11 +102,11 @@ This array should be transform in TRs units (value/TR)  before using it with sli
 
         # Select the default input filename if it is not provided
         if i_img==None:
-            print(self.raw_dir + "sub-" + ID+ "/" + ses_name + "/func/sub-" + ID + "*" + task_name +"*" +'*' + tag + "*.nii*")
+            #print(self.raw_dir + "sub-" + ID+ "/" + ses_name + "/func/sub-" + ID + "*" + task_name +"*" +'*' + tag + "*.nii*")
             i_img=glob.glob(self.raw_dir + "sub-" + ID+ "/" + ses_name + "/func/sub-" + ID + "*" + task_name +"*" +'*' + tag + "*.nii*")[0]
         if json_f==None:
             json_f=glob.glob(i_img.split(".")[0] + "*.json")[0]
-        print("input image is: " + i_img)
+        #print("input image is: " + i_img)
         
         # Create output directories if no existed
         ID_dir=self.preprocess_dir + "/sub-" + ID  
@@ -147,7 +147,7 @@ This array should be transform in TRs units (value/TR)  before using it with sli
             else:
                 raise Warning("No other option that interleaved acquisition for sct was implemented yet, you should cutomise the code here to add an option")
         
-        if not os.path.exists(stc_dir) and redo==False:
+        if os.path.exists(stc_dir) and redo==False:
             print(">>>>> slice timing correction was already completed for sub-" + ID)
         
         return o_img
@@ -418,7 +418,7 @@ class Preprocess_Br:
         
         #2. unzip files
         if os.path.basename(i_img).split(".")[-1] == "gz" :
-            unzip_i_img=BrSc_utils.unzip_file(i_img,o_folder=o_folder,ext=".nii",zip_file=False, redo=False,verbose=False)
+            unzip_i_img=brsc_utils.unzip_file(i_img,o_folder=o_folder,ext=".nii",zip_file=False, redo=False,verbose=False)
         else:
             unzip_i_img=i_img
             
@@ -498,8 +498,6 @@ class Preprocess_Br:
         
     def coreg_func2anat(self,ID=None,ref_img=None,source_img=None,other_files=None,tag="",o_folder=None,redo=False,verbose=True):
         '''
-        this function is not finalized yet
-        
         ID: name of the participant
         source_img <filename>: functional image filename 3D  (str, default:None, an error will be raise)
         ref_img <filename>: anat image filename 3D  (str, default:None, an error will be raise)
@@ -507,9 +505,9 @@ class Preprocess_Br:
         o_folder <folder dir>: output folder (str, default:None, the input folder will be used)
         dest_img <filename>: destination filename 
         warping_fields <filename>: Transformation(s), which can be warping fields (nifti image) or affine transformation matrix (text file). Separate with space.
-   
-        
+
         '''
+        
         if ID==None:
             raise Warning("Please provide the ID of the participant, ex: _.stc(ID='A001')")
         
@@ -519,21 +517,21 @@ class Preprocess_Br:
     
         # Unizip anat and mean func data
         if os.path.basename(ref_img).split(".")[-1] == "gz" :
-            unzip_ref_img=BrSc_utils.unzip_file(ref_img,o_folder="/"+os.path.dirname(ref_img)+"/",ext="_SPM.nii",redo=True,verbose=False)
+            unzip_ref_img=brsc_utils.unzip_file(ref_img,o_folder="/"+os.path.dirname(ref_img)+"/",ext="_SPM.nii",redo=True,verbose=False)
         else:
             unzip_ref_img=ref_img.split()
 
         if os.path.basename(source_img).split(".")[-1] == "gz" :
-            unzip_source_img=BrSc_utils.unzip_file(source_img,o_folder=os.path.dirname(source_img) +"/",ext=tag+".nii",redo=True,verbose=False)
+            unzip_source_img=brsc_utils.unzip_file(source_img,o_folder=os.path.dirname(source_img) +"/",ext=tag+".nii",redo=True,verbose=False)
         else:
             unzip_source_img=source_img.split('.')[0]  + tag + ".nii"
             shutil.copy(source_img, unzip_source_img)
-
+        
             
        # Unzip 4d data to apply warpping field
         if other_files:
             if os.path.basename(other_files).split(".")[-1] == "gz":
-                unzip_other_files=BrSc_utils.unzip_file(other_files,o_folder=os.path.dirname(other_files),ext=tag+".nii",redo=True,verbose=False)
+                unzip_other_files=brsc_utils.unzip_file(other_files,o_folder=os.path.dirname(other_files),ext=tag+".nii",redo=True,verbose=False)
             else:
                 unzip_other_files=other_files.split('.')[0] + tag + ".nii"
                 shutil.copy(other_files, unzip_other_files)
@@ -550,8 +548,8 @@ class Preprocess_Br:
             o_folder=self.preprocess_dir + "sub-" + ID+ "/" + ses_name + "/func/"+task_name+ "/" +self.config["preprocess_dir"]["func_coreg"] + "/brain/"
         if not os.path.exists(o_folder):
             os.mkdir(o_folder)# create output folder if not exists
-        o_filename= o_folder+ "/"+ os.path.basename(unzip_source_img).split('.')[0] +tag+".nii" # output filename
-        o_filename_r= o_folder+ "/"+ os.path.basename(unzip_source_img).split('.')[0] +tag+"_r.nii" # output filename
+        o_filename= o_folder+ "/"+ os.path.basename(unzip_source_img).split('.')[0] +".nii" # output filename
+        o_filename_r= o_folder+ "/"+ os.path.basename(unzip_source_img).split('.')[0] +"_r.nii" # output filename
         
         # run coregistration into anat:
         if not os.path.exists(o_filename) or redo==True:
@@ -561,8 +559,12 @@ class Preprocess_Br:
            
             print('Coregistration into anat space done')
             os.rename(os.path.dirname(unzip_source_img) + "/"+ os.path.basename(unzip_source_img),o_filename) # rename the output
+            
             os.rename(os.path.dirname(unzip_source_img) + "/r"+ os.path.basename(unzip_source_img),o_filename_r) # rename the output
             
+            if other_files == None:
+                os.remove(o_folder+ "/"+ os.path.basename(unzip_source_img).split('.')[0] +tag+".nii") # a default file will be created but we don't want it
+                
             if other_files != None:
                 o_other_filename= o_folder+ "/"+ os.path.basename(unzip_other_files).split('.')[0] +tag+".nii" # output filename
                 o_other_filename_r= o_folder+ "/"+ os.path.basename(unzip_other_files).split('.')[0] +tag+"_r.nii" # output filename
@@ -588,6 +590,37 @@ class Preprocess_Br:
                 print("Tranformation was already applied put redo=True to redo that step")
             
         return o_img
+
+    
+    def normalisation(self,ID=None,warp_file=None,coreg2anat_file=None,o_file=None,brain_mask=None,redo=False):
+        '''
+            ID: name of the participant
+            warp_file <filename>: warping field from anat to MNI space
+            coreg2anat_file <filename>: functional image coregister into anat space
+            o_file <filename>: output filename
+            brain_mask <filename>: apply a mask
+
+        '''
+        if not os.path.exists(o_file) or redo==True:
+            os.chdir(self.config["tools_dir"]["main_codes"] +'/code/spm/') # need to change the directory to find the function
+            eng = matlab.engine.start_matlab()
+            print(eng.BrainNormalisation(warp_file,coreg2anat_file)) #for quality check
+            o_files_def=os.path.split(coreg2anat_file)[0]+'/w'+coreg2anat_file.split('/')[-1] # default output
+    
+            os.rename(o_files_def,o_file) #move and rename the file
+            string="fslmaths "+o_file+ " -nan " +o_file; os.system(string)# remove nan values
+            os.remove(o_file) # remove .nii file and keep only .nii.gz
+
+            if brain_mask is not None:
+                string='fslmaths '+o_file+'.gz -mas '+brain_mask+' '+o_file
+                os.system(string)
+                #os.remove(func_norm_file)
+            
+            print("output: " + os.path.basename(o_file))
+
+            return print('Normalisation into MNI space done')
+        else:
+            return print('Normalisation into MNI space was already done, set redo=True to run again the coregistration')
         
 ########################################################################            
 ########################################################################
@@ -851,6 +884,7 @@ class Preprocess_Sc:
             string="sct_deepseg_sc -i " +i_img +" -c t2s -centerline file -file_centerline "+ctr_img +" -o " +o_img
              
         if not os.path.exists(o_img) or redo==True:
+            print(o_img)
             print(">>>>> Segmentation is running for the "+img_type + "image of the sub-" + ID + " ")
             os.system(string)
             print("Check the output and correct manually if needed" )

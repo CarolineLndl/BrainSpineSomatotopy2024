@@ -1,5 +1,6 @@
 {"main_dir":"/cerebro/cerebro1/dataset/",
-"raw_dir":"/bmpd/derivatives/HealthyControls_project/2024_brsc_fc_data/rawdata/",
+"raw_dir_good":"/bmpd/derivatives/HealthyControls_project/2024_brsc_fc_data/",
+"raw_dir":"/stratals/rawdata/",
 "PAM50_cord":"PAM50_cord.nii.gz",
 "PAM50_t2":"PAM50_t2.nii.gz",
 "PAM50_csf":"PAM50_csf.nii.gz",
@@ -12,8 +13,8 @@
              "run_names_0exemple":[""]},
               
  
-"preprocess_dir":{"main_dir2":"stratals//derivatives/preprocessing/",
-                "main_dir":"bmpd//derivatives/spinalcord_processing/",
+"preprocess_dir":{"main_dir":"stratals//derivatives/preprocessing/",
+                "main_dir2":"bmpd//derivatives/spinalcord_processing/",
                   "func_stc":"/1_STC/",
                   "func_mask":"/2_Coarse_mask/",
                   "func_moco":"/3_MOCO/",
@@ -34,7 +35,7 @@
  "tools_dir":{"main_codes":"/cerebro/cerebro1/dataset/bmpd/derivatives/HealthyControls_project/2024_brsc_fc_project/",
             "spm_dir":"/cerebro/cerebro1/dataset/bmpd/derivatives/thibault_test/code/toolbox/spm12/"},
 
-"participants_IDs":["P030","P099"],
+"participants_IDs":["A006_test"],
     
 "participants_IDs2":["A006","A007","A008","A009","A011","A013","A023","A024","A025","A026","A027","A028","A029","A030","A032","A033","A034","A036","A037","A038","A039","A043","A044","A045","A046","A048","A050","A051","A052"],
  "files_specificities":{"anat":{},

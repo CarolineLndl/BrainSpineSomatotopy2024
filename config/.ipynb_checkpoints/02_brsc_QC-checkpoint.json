@@ -17,6 +17,12 @@
                 "FD_mean_f":"FD_mean.txt",
                 "moco_mean_f":"*moco_mean.nii.gz",
                 "moco_f":"*moco.nii.gz"},
+
+"warp_files":{"dir":"/derivatives/preprocessing/sub-{}/func/5_Coregistration/{}/",
+                "warp_func2PAM50":"*from-func_to_PAM50*"},
+
+"brain_anat":{"file":"/derivatives/preprocessing/sub-{}/anat/brain/segmentation/*T1w_brain_masked_SPM.nii"},
+
 "seg_files":{"dir":"/derivatives/preprocessing/sub-{}/func/4_Segmentation/{}/"},
     
 "tSNR":{"dir":"/cerebro/cerebro1/dataset/bmpd/derivatives/HealthyControls_project/func_preparation/QC/7fev24/tSNR/",
@@ -40,8 +46,8 @@
 
 "tools_dir":{"main_codes":"/cerebro/cerebro1/dataset/bmpd/derivatives/HealthyControls_project/2024_brsc_fc_project/",
             "spm_dir":"/cerebro/cerebro1/dataset/bmpd/derivatives/thibault_test/code/toolbox/spm12/"},
- 
-"participants_IDs":["A007","A008","A009","A011","A013","A023","A024","A025","A026","A027","A028","A029","A030","A032","A033","A034","A036","A037","A038","A039","A043","A044","A045","A046","A048","A050","A051","A052","P030","P099"],
+"participants_IDs":["A006"],
+"participants_IDs2":["A006","A007","A008","A009","A011","A013","A023","A024","A025","A026","A027","A028","A029","A030","A032","A033","A034","A036","A037","A038","A039","A043","A044","A045","A046","A048","A050","A051","A052","P030","P099"],
  "files_specificities":{"anat":{},
  "func":{"A027":"run-02","A029":"run-02","P099":"run-02"}}
 } 
