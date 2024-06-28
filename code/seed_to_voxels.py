@@ -28,6 +28,7 @@ class Seed2voxels:
     Attributes
     ----------
     config : dict
+    
     '''
     
     def __init__(self, config, seed_indiv):
@@ -361,65 +362,7 @@ class Seed2voxels:
             
         return  seed_to_voxel_correlations
         
-    def extract_corr_values(self,):
-        print("bo")
 
-    
-    
-    def dtw_maps(self,seed_ts,voxels_ts,output_img=None,save_maps=True,smoothing_output=False,redo=False, n_jobs=1):
-        '''
-        Create  DTW maps
-        seed_ts: list
-            timecourse to use as seed (see extract_data method) (list containing one array per suject)
-        target_ts: list
-            timecourses of all voxels on which to compute the correlation (see extract_data method) (list containing one array per suject)
-        output_img: str
-            path + rootname of the output image (/!\ no extension needed) (ex: '/pathtofile/output')
-        save_maps: boolean
-            to save correlation maps (default = True).
-        redo: boolean
-            to rerun the analysis
-        njobs: int
-            number of jobs for parallelization
-   
-        ----------
-        '''
-        seed_to_voxel_dtw=Parallel(n_jobs=n_jobs)(delayed(self._compute_dtw)(voxels_ts[subject_nb].astype('double'),seed_ts[subject_nb].astype('double'))
-                                          for subject_nb in range(len(self.subject_names)))
-        
-        if save_maps==True:
-            Parallel(n_jobs=n_jobs)(delayed(self._save_maps)(subject_nb,seed_to_voxel_dtw[subject_nb],
-                                                                 output_img,
-                                                                 smoothing_output)
-                                           for subject_nb in range(len(self.subject_names)))     
-            # Create 4D image included all participants maps
-            image.concat_imgs(sorted(glob.glob(os.path.dirname(output_img) + '/tmp_sub-*.nii.gz'))).to_filename(output_img + '.nii')
-            
-            # rename individual outputs
-            for tmp in glob.glob(os.path.dirname(output_img) + '/tmp_*.nii.gz'):    
-                new_name=os.path.dirname(output_img) + "/dtw"+tmp.split('tmp')[-1] 
-                print(new_name)
-                
-                os.rename(tmp,new_name)
-        np.savetxt(os.path.dirname(output_img) + '/subjects_labels.txt',self.subject_names,fmt="%s") # copy the config file that store subject info     
-        
-        return seed_to_voxel_dtw
-
-
-    def _compute_dtw(self, voxels_ts, seed_ts):
-        '''
-        Run the Dynamic Time Warping analysis
-        '''
-        seed_to_voxel_dtw = np.zeros((voxels_ts.shape[1], 1)) # np.zeros(number of voxels,1)
-        for v in range(0,voxels_ts.shape[1]): 
-            seed_to_voxel_dtw[v] = dtw.distance_fast(seed_ts, voxels_ts[:, v])
-
-        seed_to_voxel_dtw_norm = seed_to_voxel_dtw / np.nanmax(seed_to_voxel_dtw,axis=0)    
-        seed_to_voxel_dtw_norm = 1-seed_to_voxel_dtw_norm 
-
-        return seed_to_voxel_dtw_norm
-    
-    
     def _save_maps(self,subject_nb,maps_array,output_img,smoothing):
         '''
         Save maps in a 4D image (one for each participant)
