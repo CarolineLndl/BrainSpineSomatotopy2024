@@ -1,26 +1,30 @@
 # -*- coding: utf-8 -*-
 import glob, os, shutil, json, scipy
-#from urllib.parse import non_hierarchical
 import nibabel as nib
 import numpy as np
-from nilearn.maskers import NiftiMasker
-
-from nilearn import image
-from joblib import Parallel, delayed
-
-import time
-
 import pingouin as pg
 import pandas as pd
 
-from sklearn.feature_selection import mutual_info_regression
-from sklearn import decomposition
-from scipy import stats
-
-
+# Time computation libraries
+from joblib import Parallel, delayed
+import time
 from tqdm import tqdm
 
+# Nilearn library
+from nilearn.maskers import NiftiMasker
+from nilearn import image
 
+# Sklearn library
+from sklearn.feature_selection import mutual_info_regression
+from sklearn import decomposition
+
+# Statistics library
+from scipy import stats
+from statsmodels.stats.multitest import multipletests
+
+# plotting libraries
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 class Seed2voxels:
     '''
@@ -362,7 +366,165 @@ class Seed2voxels:
             
         return  seed_to_voxel_correlations
         
+    def extract_corr_values(self,output_tag='', redo=False):
 
+        '''
+        Extract correlation values for specific seeds within masks for each individuals
+        output_tag: string
+            specify a tag for the output filename
+        redo: bool
+            put redo=true to rerun the analyse
+        ----------
+       '''
+        # 1. Initialize empty variables and define output filename
+        masker=[]
+        corr_value={};corr_mean={};indiv_f={}
+        mask_f=[]
+
+        output_dir=self.config["second_level"] + self.config["extract_corr"]["output_dir"]
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir) # create output directory if not already exists
+
+        output_indiv_csv=output_dir + "meancorr_indiv_df_" + output_tag + ".csv"
+        output_mean_csv=output_dir + "meancorr_mean_df_" + output_tag + ".csv"
+        output_std_csv=output_dir + "meancorr_std_df_" + output_tag + ".csv"
+        # 2. Select mask file if None
+        
+        for mask_nb,mask_name in enumerate(self.config["extract_corr"]["masks_tag"]):
+            mask_f.append(glob.glob(self.config["extract_corr"]["masks_f"].format(mask_name))[0])
+
+            
+        # 3. Select seeds name of None
+        seeds=self.config["extract_corr"]["seeds"]
+
+        if not os.path.exists(output_indiv_csv) or redo==True:
+        # 4. Extract correlation values within the masks for each seed and each participants
+            for mask_nb,mask_name in enumerate(self.config["extract_corr"]["masks_tag"]):
+                masker.append(NiftiMasker(mask_f[mask_nb],smoothing_fwhm=None, t_r=1.55,low_pass=None, high_pass=None)) # seed masker
+                corr_value[mask_name]={};corr_mean[mask_name]={}
+        
+                for seed_nb, seed_name in enumerate(self.config["extract_corr"]["seeds"]):
+                    indiv_f[seed_name]=[]
+                    corr_value[mask_name][seed_name]={}
+                    corr_mean[mask_name][seed_name]={}
+                    for ID_nb, ID_name in enumerate(self.config["list_subjects"]):
+                        indiv_f[seed_name].append(glob.glob(self.config["first_level"] + seed_name + "/"+self.config["targeted_voxels"]["target_name"] + "_fc_maps/Corr/bi-corr_sub-" + ID_name+ ".nii.gz")[0])
+                        corr_value[mask_name][seed_name][ID_name]=masker[mask_nb].fit_transform(indiv_f[seed_name][ID_nb]) #low_pass=0.1,high_pass=0.01
+                        corr_mean[mask_name][seed_name][ID_name]=np.nanmean(corr_value[mask_name][seed_name][ID_name],axis=1) # mean time serie
+    
+            # 5. Create a list to store the data as a datraframe
+            data_list = []
+    
+            # Iterate through the dictionary and extract the data
+            for outer_key, inner_dict in corr_mean.items():
+                for inner_key, subject_dict in inner_dict.items():
+                    for subject, value in subject_dict.items():
+                        data_list.append({
+                        'seeds': outer_key,
+                        'masks': inner_key,
+                        'IDs': subject,
+                        'corr': value[0]
+                        })
+    
+            # Convert the list of dictionaries to a DataFrame
+            df_indiv = pd.DataFrame(data_list)
+            df_indiv.to_csv(output_indiv_csv, index=False)
+            print("the dataframe has been saved here: ")
+            print(output_indiv_csv)
+            
+        else:
+            # load the csv file into a dataframe
+            df_indiv = pd.read_csv(output_indiv_csv)
+
+        # 6. Group individual values in a new dataframe
+        if not os.path.exists(output_mean_csv) or redo==True:
+            mean_df = df_indiv.groupby(['seeds', 'masks'], as_index=False)['corr'].mean()
+            std_df = df_indiv.groupby(['seeds', 'masks'], as_index=False)['corr'].std()
+
+            mean_df.to_csv(output_mean_csv, index=False)
+            std_df.to_csv(output_std_csv, index=False)
+        else:
+            # load the csv file into a dataframe
+            mean_df = pd.read_csv(output_mean_csv)
+
+        return df_indiv, mean_df
+
+    def plot_corr_matrix(self,df=None,output_tag='',redo=False):
+        '''
+        Create matrix of correlation
+        df: dataframe
+            This dataframe should group individual values
+
+        redo: bool
+            put redo=true to rerun the analyse
+
+        '''
+        # output filename
+        output_dir=self.config["second_level"] + self.config["extract_corr"]["output_dir"]
+        output_fig=output_dir + "meancorr_matrix_" + output_tag 
+        
+        # Pivot the dataframe to get a matrix format
+        heatmap_data = df.pivot_table(index='seeds', columns='masks', values='corr')
+
+        # Plotting the heatmap
+        plt.figure(figsize=(6.5, 5))
+        sns.heatmap(heatmap_data, annot=False, cmap='viridis', cbar=True)
+        plt.title('Correlation matrix')
+
+
+        if not os.path.exists(output_fig + '.svg') or redo==True:
+            plt.savefig(output_fig + '.svg', format='svg')
+            plt.savefig(output_fig + '.pdf', format='pdf')
+            print("the figure has been saved")
+
+        plt.show()
+        plt.close()  # Close the figure to release memory
+        
+    def stats_corr(self,df=None,output_tag="",redo=False):
+        '''
+        Perform one sampled t tests
+        df: dataframe
+            this dataframe should contain individual values
+
+        redo: bool
+            put redo=true to rerun the analyse
+
+        '''  
+
+        # output filename
+        output_dir=self.config["second_level"] + self.config["extract_corr"]["output_dir"]
+        output_stats_csv=output_dir + "meancorr_stats_df_" + output_tag + ".csv"
+        
+        if not os.path.exists(output_stats_csv) or redo==True:
+            # Initialize dictionnary to store statistical results
+            results = {'seeds': [],
+                       'masks': [],
+                       't-statistic': [],
+                       'p-value': []}
+
+            
+            # Group the data by 'seeds' and 'masks' and perform one-sample t-tests
+            grouped = df.groupby(['seeds', 'masks'])
+            print(grouped)
+            for (seeds, masks), group in grouped:
+                t_stat, p_value = scipy.stats.ttest_1samp(group['corr'], 0)
+                results['seeds'].append(seeds)
+                results['masks'].append(masks)
+                results['t-statistic'].append(t_stat)
+                results['p-value'].append(p_value)
+                
+            stats_df = pd.DataFrame(results)
+            # Apply FDR correction to p-values
+            stats_df['p-value_adjusted'] = multipletests(stats_df['p-value'], method='fdr_bh')[1]
+
+            
+            stats_df.to_csv(output_stats_csv, index=False)
+            print("the stats dataframe has been saved")
+        else:
+            stats_df = pd.read_csv(output_stats_csv)# load the csv file into a dataframe
+
+        return stats_df
+        
     def _save_maps(self,subject_nb,maps_array,output_img,smoothing):
         '''
         Save maps in a 4D image (one for each participant)
