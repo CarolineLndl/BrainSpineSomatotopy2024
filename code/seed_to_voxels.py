@@ -420,8 +420,8 @@ class Seed2voxels:
                 for inner_key, subject_dict in inner_dict.items():
                     for subject, value in subject_dict.items():
                         data_list.append({
-                        'seeds': outer_key,
-                        'masks': inner_key,
+                        'masks': outer_key,
+                        'seeds': inner_key,
                         'IDs': subject,
                         'corr': value[0]
                         })

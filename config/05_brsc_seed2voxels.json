@@ -3,7 +3,7 @@
 "masks":{"brain":"/templates/MNI/MNI_GM_2mm.nii.gz",
          "spinalcord": "/templates/PAM50/template/PAM50_cord.nii.gz"},
 
-"seeds":{"seed_dir":"/hc_project_analyses/masks/spinalcord/levels/icaps/gm/",
+"seeds":{"seed_dir":"/2024_brsc_fc_project/masks/spinalcord/levels/icaps/gm/",
          "seed_indiv_dir":"/templates/PAM50/masks/indiv/",
          "seed_names":["icap_C1_gm","icap_C2_gm","icap_C3_gm","icap_C4_gm","icap_C5_gm","icap_C6_gm","icap_C7_gm"],
          
