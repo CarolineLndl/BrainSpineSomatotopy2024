@@ -35,31 +35,32 @@ class Seed2voxels:
     
     '''
     
-    def __init__(self, config, seed_indiv):
+    def __init__(self, config):
         self.config = config # load config info
-        self.seed_indiv=seed_indiv # sould be "True" or "False"
         self.subject_names= config["list_subjects"]
         self.outputdir= self.config["main_dir"] +self.config["seed2vox_dir"]
         self.seed_names=self.config["seeds"]["seed_names"]
         self.target=self.config["targeted_voxels"]["target_name"]
         self.seed_structure=self.config["seeds"]["seed_structure"]
         self.target_structure=self.config["targeted_voxels"]["target_structure"]
-        
+        self.firstlevel_dir=self.config["main_dir"] +  self.config["seed2vox_dir"] + self.config["first_level"]
+        self.secondlevel_dir=self.config["main_dir"] +  self.config["seed2vox_dir"] + self.config["second_level"]
+
         #>>> create output directory if needed -------------------------------------
         if not os.path.exists(config['main_dir'] + config['seed2vox_dir']):
             os.mkdir(self.config['main_dir'] + self.config['seed2vox_dir'])
-            os.mkdir(self.config['main_dir'] + self.config['seed2vox_dir'] + '/1_first_level/')
-        if not os.path.exists(config['main_dir'] + config['seed2vox_dir'] + '/1_first_level/'+self.target):
-            os.mkdir(self.config['main_dir'] + self.config['seed2vox_dir'] + '/1_first_level/'+self.target)
-            os.mkdir(self.config['main_dir'] + self.config['seed2vox_dir'] + '/1_first_level/'+self.target+'/timeseries/') # folder to store timeseries extraction
-            os.mkdir(self.config['main_dir'] + self.config['seed2vox_dir'] + '/1_first_level/'+self.target+'/' + self.target +'_fc_maps/') # folder to store maps of FC
+            os.mkdir(self.firstlevel_dir)
+        if not os.path.exists(self.firstlevel_dir+self.target):
+            os.mkdir(self.firstlevel_dir+self.target)
+            os.mkdir(self.firstlevel_dir+self.target+'/timeseries/') # folder to store timeseries extraction
+            os.mkdir(self.firstlevel_dir+self.target+'/' + self.target +'_fc_maps/') # folder to store maps of FC
 
                 
         for seed_name in self.seed_names:
-            if not os.path.exists(config['main_dir'] + config['seed2vox_dir'] + '/1_first_level/'+seed_name):
-                os.mkdir(self.config['main_dir'] + self.config['seed2vox_dir'] + '/1_first_level/'+seed_name)
-                os.mkdir(self.config['main_dir'] + self.config['seed2vox_dir'] + '/1_first_level/'+seed_name+'/timeseries/') # folder to store timeseries extraction
-                os.mkdir(self.config['main_dir'] + self.config['seed2vox_dir'] + '/1_first_level/'+seed_name+'/'+ self.target +'_fc_maps/') # folder to store maps of FC
+            if not os.path.exists(self.firstlevel_dir+seed_name):
+                os.mkdir(self.firstlevel_dir+seed_name)
+                os.mkdir(self.firstlevel_dir+seed_name+'/timeseries/') # folder to store timeseries extraction
+                os.mkdir(self.firstlevel_dir+seed_name+'/'+ self.target +'_fc_maps/') # folder to store maps of FC
         
 
     
@@ -75,11 +76,8 @@ class Seed2voxels:
             #print(self.config["main_dir"] + self.config["seeds"]["seed_dir"]+ seed_name + ".nii.gz")
             for subject_name in config['list_subjects']:
                 subject_name='sub-' +  subject_name
-                if self.seed_indiv==False:
-                    
-                    self.mask_seeds[seed_name].append(glob.glob(self.config["main_dir"] + self.config["seeds"]["seed_dir"]+ seed_name + ".nii.gz")[0]) # mask of the voxels tareted for the analysis
-                elif self.seed_indiv:
-                    self.mask_seeds[seed_name].append(glob.glob(self.config["main_dir"] + self.config["seeds"]["seed_indiv_dir"]+ subject_name + "*" +seed_name + "*.nii.gz")[0]) # mask of the voxels tareted for the analysis
+                self.mask_seeds[seed_name].append(glob.glob(self.config["main_dir"] + self.config["seeds"]["seed_dir"]+ seed_name + ".nii.gz")[0]) # mask of the voxels tareted for the analysis
+                
   
             print(self.mask_seeds[seed_name][0])
         
@@ -89,9 +87,8 @@ class Seed2voxels:
             subject_name='sub-' +  subject_name
             
             # images selected for extraction:
-            self.data_seed.append(glob.glob(self.config["input_func"]["seed_dir"] + subject_name +'/'+ self.seed_structure +'/*'+ config["input_func"]["seed_tag"] +'*')[0])
-            #print(self.config["input_func"]["target_dir"] + subject_name +'/'+ self.target_structure +'/*'+ config["input_func"]["target_tag"] +'*')
-            self.data_target.append(glob.glob(self.config["input_func"]["target_dir"] + subject_name +'/'+ self.target_structure +'/*'+ config["input_func"]["target_tag"] +'*')[0])
+            self.data_seed.append(glob.glob(self.config['main_dir'] + self.config["input_func"]["seed_dir"] + subject_name +'/'+ self.seed_structure +'/*'+ config["input_func"]["seed_tag"] +'*')[0])
+            self.data_target.append(glob.glob(self.config['main_dir']+ self.config["input_func"]["target_dir"] + subject_name +'/'+ self.target_structure +'/*'+ config["input_func"]["target_tag"] +'*')[0])
              
                 
         
@@ -135,9 +132,9 @@ class Seed2voxels:
         timeseries_seeds={"raw":{},"zscored":{},"mean":{},"zmean":{},"PC1":{}}
 
     # 1. Define Output filename (timeseries) _____________________________________
-        ts_target_dir=self.config['main_dir'] + self.config['seed2vox_dir'] + '/1_first_level/'+self.target+'/timeseries/' # output diretory for targeted voxel's mask
+        ts_target_dir=self.firstlevel_dir+self.target+'/timeseries/' # output diretory for targeted voxel's mask
         for seed_name in self.seed_names:
-            ts_seeds_dir[seed_name]=self.config['main_dir'] + self.config['seed2vox_dir'] + '/1_first_level/'+seed_name+'/timeseries/' # output diretory for seeds mask
+            ts_seeds_dir[seed_name]=self.firstlevel_dir+seed_name+'/timeseries/' # output diretory for seeds mask
            
         for subject_name in self.subject_names:
             ts_target_txt.append(ts_target_dir + '/sub_' + subject_name + '_mask_' + self.target + '_timeseries') # output file for targeted voxel's mask
@@ -381,7 +378,7 @@ class Seed2voxels:
         corr_value={};corr_mean={};indiv_f={}
         mask_f=[]
 
-        output_dir=self.config["second_level"] + self.config["extract_corr"]["output_dir"]
+        output_dir=self.secondlevel_dir + self.config["extract_corr"]["output_dir"]
         if not os.path.exists(output_dir):
             os.mkdir(output_dir) # create output directory if not already exists
 
@@ -408,7 +405,7 @@ class Seed2voxels:
                     corr_value[mask_name][seed_name]={}
                     corr_mean[mask_name][seed_name]={}
                     for ID_nb, ID_name in enumerate(self.config["list_subjects"]):
-                        indiv_f[seed_name].append(glob.glob(self.config["first_level"] + seed_name + "/"+self.config["targeted_voxels"]["target_name"] + "_fc_maps/Corr/bi-corr_sub-" + ID_name+ ".nii.gz")[0])
+                        indiv_f[seed_name].append(glob.glob(self.firstlevel_dir + seed_name + "/"+self.config["targeted_voxels"]["target_name"] + "_fc_maps/Corr/bi-corr_sub-" + ID_name+ ".nii.gz")[0])
                         corr_value[mask_name][seed_name][ID_name]=masker[mask_nb].fit_transform(indiv_f[seed_name][ID_nb]) #low_pass=0.1,high_pass=0.01
                         corr_mean[mask_name][seed_name][ID_name]=np.nanmean(corr_value[mask_name][seed_name][ID_name],axis=1) # mean time serie
     
@@ -460,7 +457,7 @@ class Seed2voxels:
 
         '''
         # output filename
-        output_dir=self.config["second_level"] + self.config["extract_corr"]["output_dir"]
+        output_dir=self.secondlevel_dir + self.config["extract_corr"]["output_dir"]
         output_fig=output_dir + "meancorr_matrix_" + output_tag 
         
         # Pivot the dataframe to get a matrix format
@@ -492,7 +489,7 @@ class Seed2voxels:
         '''  
 
         # output filename
-        output_dir=self.config["second_level"] + self.config["extract_corr"]["output_dir"]
+        output_dir=self.secondlevel_dir + self.config["extract_corr"]["output_dir"]
         output_stats_csv=output_dir + "meancorr_stats_df_" + output_tag + ".csv"
         
         if not os.path.exists(output_stats_csv) or redo==True:
