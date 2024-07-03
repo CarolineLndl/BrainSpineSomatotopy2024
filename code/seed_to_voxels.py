@@ -520,6 +520,7 @@ class Seed2voxels:
         else:
             stats_df = pd.read_csv(output_stats_csv)# load the csv file into a dataframe
 
+        print(stats_df)
         return stats_df
         
     def _save_maps(self,subject_nb,maps_array,output_img,smoothing):
