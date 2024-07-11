@@ -11,6 +11,9 @@ import pandas as pd
 # Statistics
 import statistics
 import statsmodels.api as sm
+import statsmodels
+from math import *
+
 #Nilearn
 from nilearn.maskers import NiftiMasker
 from nilearn import maskers
@@ -328,7 +331,23 @@ class WinnerAll:
             result = model.fit(method='powell')
             print("Statistical results for mask: " + mask)
             print(result.summary())
+
             print(" ")
+
+            for level in assigned_levels_reorder[1:]:
+                n1=len(df_mask[df_mask["level_assigned"]==assigned_levels_reorder[0]])
+                n2=len((df_mask[df_mask["level_assigned"]==level]['Total_vox']))
+                mean_ref=np.mean(df_mask[df_mask["level_assigned"]==assigned_levels_reorder[0]]['Total_vox'])
+                mean_level=np.mean(df_mask[df_mask["level_assigned"]==level]['Total_vox'])
+                var_ref=np.var(df_mask[df_mask["level_assigned"]==assigned_levels_reorder[0]]['Total_vox'],ddof=1)
+                var_level=np.var(df_mask[df_mask["level_assigned"]==level]['Total_vox'],ddof=1)
+                pooled_sd=np.sqrt(((n1 - 1) * var_ref + (n2 - 1) * var_level) / (n1 + n2 - 2))
+                cohens_d=(mean_ref-mean_level)/pooled_sd#sqrt((std_ref**2+std_level**2)/2)
+
+                print("Cohen's d for " +mask+" vs. "+ level +" : " + str(np.round(cohens_d,2)))
+            
+            print(" ")
+            print("____________________________________________________")
     
     ###################################################### 
     ### Main functions

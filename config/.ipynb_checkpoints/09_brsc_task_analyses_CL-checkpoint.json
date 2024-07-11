@@ -1,0 +1,7 @@
+{"main_dir":"/cerebro/cerebro1/dataset/bmpd/derivatives/HealthyControls_project/somato_task/",
+"list_movements2": ["Jaw","Upperarm","Forearm","Wrist","Finger"],
+"list_movements": ["Jaw"],
+
+"templates":{"surface_dir":"/cerebro/cerebro1/dataset/bmpd/derivatives/HealthyControls_project/templates/MNI/surf/"},
+"smc_mask": "/cerebro/cerebro1/dataset/bmpd/derivatives/HealthyControls_project/2024_brsc_fc_project/masks/brain/iCAPs_z_SMC_bin.nii.gz"
+} 

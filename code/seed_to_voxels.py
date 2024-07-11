@@ -497,18 +497,25 @@ class Seed2voxels:
             results = {'seeds': [],
                        'masks': [],
                        't-statistic': [],
-                       'p-value': []}
+                       'p-value': [],
+                       'cohens-d': []}
 
             
             # Group the data by 'seeds' and 'masks' and perform one-sample t-tests
             grouped = df.groupby(['seeds', 'masks'])
             print(grouped)
             for (seeds, masks), group in grouped:
+                # Run one sample t-test
                 t_stat, p_value = scipy.stats.ttest_1samp(group['corr'], 0)
+
+                # Calculate the effect size (cohen's d)
+                cohens_d=np.mean(group['corr'])/np.std(group['corr'])
                 results['seeds'].append(seeds)
                 results['masks'].append(masks)
                 results['t-statistic'].append(t_stat)
                 results['p-value'].append(p_value)
+                results['cohens-d'].append(cohens_d)
+
                 
             stats_df = pd.DataFrame(results)
             # Apply FDR correction to p-values
@@ -517,6 +524,8 @@ class Seed2voxels:
             
             stats_df.to_csv(output_stats_csv, index=False)
             print("the stats dataframe has been saved")
+
+            
         else:
             stats_df = pd.read_csv(output_stats_csv)# load the csv file into a dataframe
 
